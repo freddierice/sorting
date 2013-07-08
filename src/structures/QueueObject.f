@@ -5,7 +5,7 @@
 !
 
 !added by Freddie Rice (changes the object in the queue)
-#define DATA_TYPE INTEGER
+#define DATA_TYPE TYPE(IndexT)
 
 MODULE QueueObject
   USE IndexType
@@ -49,7 +49,7 @@ CONTAINS !-----------! Operators are implemented below !---------!
   FUNCTION NewQueue(QueueSize) Result(Queue)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: QueueSize
-    INTEGER :: ierror
+    INTEGER :: ierror, i
     TYPE(QueueT) :: Queue
 
     IF ( .NOT. ALLOCATED(Queue%Key) ) THEN
@@ -57,7 +57,9 @@ CONTAINS !-----------! Operators are implemented below !---------!
        IF ( ierror /= 0 ) THEN
           CALL SetErrorFlags( Queue, .TRUE., -1 )
        ELSE
-          Queue%Key = 0
+          DO i=1,QueueSize
+            call emptyIndexT(Queue%Key(i))
+          END DO
           Queue%Size = QueueSize
           Queue%First = 0; Queue%Last = 0
           CALL SetErrorFlags( Queue, .FALSE., 0)
@@ -117,7 +119,7 @@ CONTAINS !-----------! Operators are implemented below !---------!
        IF ( PRESENT(Node) ) Node = Queue%Key(Queue%First)
     ELSE                            ! Queue is empty
        CALL SetErrorFlags( Queue, .TRUE., -4)
-       IF ( PRESENT(Node) ) Node = HUGE(Node)
+       IF ( PRESENT(Node) ) CALL emptyIndexT( Node )
     ENDIF
 
   END SUBROUTINE delete_from_circqueue
@@ -136,7 +138,7 @@ CONTAINS !-----------! Operators are implemented below !---------!
        CALL SetErrorFlags( Queue, .FALSE., 0)
     ELSE                      ! Queue is empty
        CALL SetErrorFlags( Queue, .TRUE., -5)
-       Node = HUGE(Node)
+       CALL emptyIndexT( Node )
     ENDIF
 
   END FUNCTION select_from_circqueue

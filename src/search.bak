@@ -1,0 +1,107 @@
+!searching
+!created by freddie rice
+
+#define MAX_ROW 10000000
+      function findRowIndex( filename, row, columns ) result(o)
+         implicit none
+         
+         !input/output
+         character(len=*),intent(in) :: filename
+         double precision,dimension(:),intent(in) :: row
+         integer,dimension(:),intent(in) :: columns
+         integer,intent(out) :: o
+         
+         !HDF5 variables
+         integer :: hdferr
+         integer(HID_T) :: file, space
+         integer(HID_T) :: dInfo, dIndexTable, dIndex, dData
+         integer(HSIZE_T),dimension(1) :: dimInfo, dimIndexTable, dimIndex
+         integer(HSIZE_T),dimension(2) :: dimData
+         integer(HID_T) :: sInfo, sIndexTable, sIndex, sData
+         integer :: rowcount, columncount
+         integer(HSIZE_T),dimension(1:2) :: hyper_start, hyper_stride, hyper_count, hyper_block
+
+         !temporary variables
+         double precision,dimension(:),allocatable :: column, tempDataP,indexSize,tempRow
+         double precision :: tempP
+         integer,dimension(:),allocatable :: tempDataI
+         integer,dimension(1) :: tempDataI1
+         integer :: i,j,k,m
+         integer :: LLow, LHigh
+         integer :: columnChecks
+
+         !initialize stuff
+         dimInfo(1) = 2
+         columnChecks=size(columns)
+         
+         !hdf5 interface
+         call h5open_f(hdferr)
+
+         !open file
+         call h5fopen_f(filename, H5F_ACC_RDONLY_F, file, hdferr)
+         
+         !open datasets
+         call h5dopen_f(file,"Info", dInfo, hdferr)
+         call h5dopen_f(file,"IndexTable", dIndexTable, hdferr)
+         call h5dopen_f(file,"Data", dData, hdferr)
+         !call h5dopen_f(file,"Index1", dIndex, hdferr)
+         
+         !read in information
+         allocate(tempDataI(2))
+         h5dread_f(dInfo, H5T_NATIVE_INTEGER, tempDataI, dimInfo) 
+         rowcount    = tempDataI(1)
+         columncount = tempDataI(2)
+         deallocate(tempDataI(2))
+         
+         !initialize some preliminary values for the hyperslab
+         hyper_start(0) = 0
+         hyper_stride(:) = 0
+
+
+         allocate(indexSize(columncount))
+         i = 1
+         do while( .not. compareRows(row,tempRow,columns) .and. .not. i .gt. columnChecks  )
+            m = indexSize(i)/2
+            LLow = 1
+            LHigh = indexSize(i)
+            sData = h5dget_space_f(dData)
+            
+            h5sselect_none(sData)
+            h5sselect_hyperslab(sData
+            do while( .not. compareRowsWithColumn(row,tempRow,columns(i)) )
+               
+            end do
+
+         end do
+         deallocate(indexSize)
+      end function findRowIndex
+
+      function compareRowsWithColumns(r1,r2,columns) result(o)
+         implicit none
+
+         !input/output
+         double precision,dimension(:),intent(inout) :: r1,r2
+         integer,dimension(:),intent(inout) :: columns
+         logical,intent(out) :: o
+         
+         !temporary variables
+         integer :: i
+
+         o = .false.
+         do i=1,size(columns)
+            if( .not. compareRowsWithColumn(r1,r2,columns(i)) ) return
+         end do
+         o = .true.
+      end function
+      
+      function compareRowsWithColumn(r1,r2,column) result(o)
+         implicit none
+
+         !input/outputs
+         double precision,dimension(:),intent(inout) :: r1,r2
+         integer,intent(in) :: column
+         logical,intent(out) :: o
+         
+         o = r1(column) .eq. r2(column)
+      end function 
+

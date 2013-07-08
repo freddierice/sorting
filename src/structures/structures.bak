@@ -1,0 +1,86 @@
+!module for somes tructures that are not already made in fortran
+!Created by Freddie Rice
+!if you want to change the type, use the statement below
+
+#define QUEUE_TYPE integer
+!#define QUEUE_TYPE integer,dimension(2)
+      module structures
+         implicit none
+         
+         type QueueElement
+            type(QueueElement),pointer :: next
+            QUEUE_TYPE :: val
+         end type
+
+         type Queue
+            type(QueueElement),pointer :: first
+            type(QueueElement),pointer :: last
+            integer :: length
+         end type
+         
+         contains
+         subroutine getFromQueue(q,e)
+            implicit none
+
+            !input/output
+            type(Queue),intent(inout) :: q
+            QUEUE_TYPE,intent(inout) :: e
+
+            e = q%first%val
+
+            if( q%length .eq. 2 ) then
+               q%first => q%last
+               q%length = 1
+               return
+            end if
+
+            if( q%length .eq. 1 ) then
+               nullify(q%first)
+               nullify(q%last)
+               q%length = 0
+               return
+            end if
+            
+            print *, "setting first"
+            q%first => q%first%next
+
+            print *, "setting length"
+            q%length = q%length - 1
+         end subroutine
+
+         subroutine addToQueue(q, e)
+            implicit none
+
+            !input/output
+            type(Queue),intent(inout) :: q
+            QUEUE_TYPE,intent(inout) :: e
+            
+            !temporary
+            type(QueueElement),target :: qe
+            
+            print *, "setting qe%val to the element"
+            qe%val = e
+
+            if( q%length .eq. 0 ) then
+               print *, "mapping first element"
+               q%first => qe
+               q%last => qe
+               q%length = 1
+               return
+            end if
+            
+            print *, "incrementing the length"
+            q%length = q%length + 1
+
+            print *, "setting the pointer to the next element to qe"
+            q%last%next => qe
+            
+            print *, "setting the pointer to the last element to qe"
+            nullify(q%last)
+            q%last => qe
+            
+         end subroutine
+
+
+
+      end module

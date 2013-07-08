@@ -1,0 +1,67 @@
+#######################################################
+###################Configuration#######################
+#######################################################
+
+CC=pgf90
+LD=$(CC)
+CFLAGS=
+CFLAGS_OBJ=-Mextend
+CNAME=out
+CEXT=f
+
+#######################################################
+##############HDF5 LIBRARY LOCATIONS###################
+#######################################################
+
+HDF5_INC=/h/ricex541/lib/hdf5/include
+HDF5_LIB=/h/ricex541/lib/hdf5/lib
+
+#######################################################
+#################THE UNTOUCHABLE#######################
+#######################################################
+
+INC_FLAGS=-I$(HDF5_INC)
+LIB_FLAGS=-L$(HDF5_LIB)
+
+MODULES=$(wildcard src/*/)
+SRC_DIR=$(addprefix src/,$(MODULES)) src
+BUILD_DIR=$(addprefix build/,$(MODULES)) build
+BIN_DIR=bin
+
+SRC=$(foreach sdir,$(SRC_DIR),$(wildcard $(sdir)/*.$(CEXT)))
+INC=$(patsubst %,-I%, $(foreach sdir,$(SRC_DIR),$(wildcard $(sdir)/*.inc)))
+OBJ=$(patsubst src/%.$(CEXT),build/%.o,$(SRC))
+EXEC=$(BIN_DIR)/$(CNAME)
+
+vpath %.$(CEXT) $(SRC_DIR)
+
+define make-objs 
+$1/%.o: %.$(CEXT)
+	$(CC) -o $$@ -c $$< $(CFLAGS_OBJ) $(INC)
+endef
+
+define make-mods
+$1/%.o $1/%.mod: %.$(EXT)
+	$(CC) -o $(patsubst $1/mod_%.$(CEXT),$1/%.o,$$<) -c $$< $(CFLAGS_OBJ) $(INC)
+	mv $(patsubst $1/mod_%.$(CEXT),%.mod
+endef
+
+.PHONY: all checkdirs clean
+
+all: checkdirs $(EXEC)
+
+$(EXEC): $(OBJ)
+	$(LD) $(OBJ) -o $(EXEC) $(CFLAGS) $(INC_FLAGS) $(LIB_FLAGS)
+
+$(foreach bdir,$(BUILD_DIR),$(eval $(call make-objs,$(bdir))))
+
+checkdirs: $(BUILD_DIR) $(BIN_DIR)
+$(BUILD_DIR):
+	@mkdir -p $@
+$(BIN_DIR):
+	@mkdir -p $@
+
+clean:
+	@rm -rf $(BUILD_DIR) $(BIN_DIR)
+
+
